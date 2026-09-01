@@ -1,0 +1,1163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ExpenseAI — AI-Powered Personal Expense Analysis System</title>
+  
+  <!-- Inter Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- FontAwesome 6 Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  
+  <!-- Chart.js 4 -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+  <!-- App Stylesheets -->
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/animations.css" />
+</head>
+<body>
+
+  <!-- Ambient Glow Effects -->
+  <div class="ambient-glow">
+    <div class="glow-1"></div>
+    <div class="glow-2"></div>
+  </div>
+
+  <div class="app-layout">
+    
+    <!-- ====================================================================
+         SIDEBAR NAVIGATION
+         ==================================================================== -->
+    <aside class="sidebar" id="app-sidebar">
+      <div class="brand-wrapper">
+        <div class="brand-icon">
+          <i class="fa-solid fa-brain"></i>
+        </div>
+        <div class="brand-info">
+          <h1>ExpenseAI</h1>
+          <p>AI Financial Intelligence</p>
+        </div>
+      </div>
+
+      <nav class="nav-menu">
+        <a class="nav-item active" data-tab="dashboard">
+          <i class="fa-solid fa-chart-pie"></i>
+          <span>Dashboard</span>
+        </a>
+        <a class="nav-item" data-tab="add-expense">
+          <i class="fa-solid fa-circle-plus"></i>
+          <span>Add Expense</span>
+        </a>
+        <a class="nav-item" data-tab="expenses">
+          <i class="fa-solid fa-receipt"></i>
+          <span>Expense History</span>
+        </a>
+        <a class="nav-item" data-tab="analytics">
+          <i class="fa-solid fa-chart-line"></i>
+          <span>Monthly Analytics</span>
+        </a>
+        <a class="nav-item" data-tab="categories">
+          <i class="fa-solid fa-layer-group"></i>
+          <span>Categories</span>
+        </a>
+        <a class="nav-item" data-tab="where-is-money">
+          <i class="fa-solid fa-magnifying-glass-chart"></i>
+          <span>Where Is My Money</span>
+        </a>
+        <a class="nav-item" data-tab="ai">
+          <i class="fa-solid fa-wand-magic-sparkles"></i>
+          <span>AI Insights</span>
+        </a>
+        <a class="nav-item" data-tab="budget">
+          <i class="fa-solid fa-wallet"></i>
+          <span>Budget Planner</span>
+        </a>
+        <a class="nav-item" data-tab="settings">
+          <i class="fa-solid fa-gear"></i>
+          <span>Settings</span>
+        </a>
+      </nav>
+
+      <!-- Sidebar Mini Health Score Widget -->
+      <div class="sidebar-health-card" onclick="AppState.switchTab('ai')" style="cursor:pointer;" title="Click to view full Financial Health breakdown">
+        <div class="sidebar-health-header">
+          <span>Expense Health</span>
+          <i class="fa-solid fa-heart-pulse" style="color:var(--emerald);"></i>
+        </div>
+        <div class="sidebar-health-score" id="sb-health-score">
+          --<span>/100</span>
+        </div>
+        <div class="sidebar-health-bar">
+          <div class="sidebar-health-fill" id="sb-health-fill" style="width: 75%;"></div>
+        </div>
+        <div class="sidebar-health-grade" id="sb-health-grade">Analyzing metrics...</div>
+      </div>
+    </aside>
+
+    <!-- ====================================================================
+         MAIN APP WRAPPER
+         ==================================================================== -->
+    <div class="main-wrapper">
+      
+      <!-- Topbar Header -->
+      <header class="topbar">
+        <div class="topbar-left">
+          <button class="mobile-toggle" id="mobile-menu-btn" title="Toggle Navigation Menu">
+            <i class="fa-solid fa-bars"></i>
+          </button>
+          <div class="page-title">
+            <h2 id="header-view-title">Financial Dashboard</h2>
+            <p id="header-view-desc">Understand your spending. Make smarter decisions.</p>
+          </div>
+        </div>
+
+        <div class="topbar-actions">
+          <!-- Month & Year Global Filter -->
+          <div class="period-selector-group">
+            <select class="custom-select" id="global-month-select" title="Select Month">
+              <option value="1">January</option>
+              <option value="2">February</option>
+              <option value="3">March</option>
+              <option value="4">April</option>
+              <option value="5">May</option>
+              <option value="6">June</option>
+              <option value="7">July</option>
+              <option value="8" selected>August</option>
+              <option value="9">September</option>
+              <option value="10">October</option>
+              <option value="11">November</option>
+              <option value="12">December</option>
+            </select>
+            <select class="custom-select" id="global-year-select" title="Select Year">
+              <option value="2025">2025</option>
+              <option value="2026" selected>2026</option>
+              <option value="2027">2027</option>
+            </select>
+          </div>
+
+          <button class="btn btn-demo btn-sm" id="btn-top-demo-data" title="Populate 30+ realistic demo expenses & budgets">
+            <i class="fa-solid fa-database"></i> Demo Data
+          </button>
+          <button class="btn btn-secondary btn-sm" id="btn-top-reset-data" title="Clear all expense records">
+            <i class="fa-solid fa-rotate-left"></i> Reset
+          </button>
+          <button class="btn btn-primary" id="btn-top-add-expense">
+            <i class="fa-solid fa-plus"></i> Add Expense
+          </button>
+        </div>
+      </header>
+
+      <!-- Main Body Content -->
+      <main class="content-body">
+        
+        <!-- ================================================================
+             VIEW 1: DASHBOARD
+             ================================================================ -->
+        <section class="view-section active" id="view-dashboard">
+          
+          <!-- Empty State (Shown if no data) -->
+          <div class="card empty-state-box" id="dashboard-empty-state" style="display:none;">
+            <div class="empty-state-icon">
+              <i class="fa-solid fa-wallet"></i>
+            </div>
+            <h3 class="empty-state-title">No Expenses Recorded Yet</h3>
+            <p class="empty-state-desc">Add your first expense or load realistic sample data to unlock charts, monthly analyses, and AI financial recommendations.</p>
+            <div style="display:flex; gap:12px;">
+              <button class="btn btn-demo" onclick="AppState.handleLoadDemoData()">
+                <i class="fa-solid fa-database"></i> Load Sample Data
+              </button>
+              <button class="btn btn-primary" onclick="AppState.openModal('add-expense-modal')">
+                <i class="fa-solid fa-plus"></i> Add First Expense
+              </button>
+            </div>
+          </div>
+
+          <!-- Active Dashboard Content -->
+          <div id="dashboard-data-view">
+            
+            <!-- Top Summary KPI Cards -->
+            <div class="metrics-grid">
+              <!-- Card 1: Total Spending -->
+              <div class="card metric-card">
+                <div class="metric-header">
+                  <span class="metric-title">Total Spending</span>
+                  <div class="metric-icon-box icon-purple"><i class="fa-solid fa-coins"></i></div>
+                </div>
+                <div class="metric-value" id="kpi-total-spending">₹0.00</div>
+                <div class="metric-subtext">Selected period expenditures</div>
+              </div>
+
+              <!-- Card 2: This Month -->
+              <div class="card metric-card">
+                <div class="metric-header">
+                  <span class="metric-title">This Month</span>
+                  <div class="metric-icon-box icon-cyan"><i class="fa-regular fa-calendar-check"></i></div>
+                </div>
+                <div class="metric-value" id="kpi-this-month">₹0.00</div>
+                <div class="metric-subtext">
+                  <span class="badge-pill badge-neutral" id="kpi-mom-badge">0.0% vs last mo</span>
+                </div>
+              </div>
+
+              <!-- Card 3: Avg Daily Spending -->
+              <div class="card metric-card">
+                <div class="metric-header">
+                  <span class="metric-title">Avg Daily Spending</span>
+                  <div class="metric-icon-box icon-emerald"><i class="fa-solid fa-chart-simple"></i></div>
+                </div>
+                <div class="metric-value" id="kpi-avg-daily">₹0.00</div>
+                <div class="metric-subtext">Daily spending cadence</div>
+              </div>
+
+              <!-- Card 4: Highest Expense -->
+              <div class="card metric-card">
+                <div class="metric-header">
+                  <span class="metric-title">Highest Expense</span>
+                  <div class="metric-icon-box icon-rose"><i class="fa-solid fa-arrow-up-right-dots"></i></div>
+                </div>
+                <div class="metric-value" id="kpi-highest-amount">₹0.00</div>
+                <div class="metric-subtext" id="kpi-highest-desc" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">-</div>
+              </div>
+
+              <!-- Card 5: Top Category -->
+              <div class="card metric-card">
+                <div class="metric-header">
+                  <span class="metric-title">Top Category</span>
+                  <div class="metric-icon-box icon-amber"><i class="fa-solid fa-fire"></i></div>
+                </div>
+                <div class="metric-value" id="kpi-top-category" style="font-size:1.45rem;">-</div>
+                <div class="metric-subtext" id="kpi-top-cat-sub">0.0% of total spending</div>
+              </div>
+
+              <!-- Card 6: Total Transactions -->
+              <div class="card metric-card">
+                <div class="metric-header">
+                  <span class="metric-title">Transactions</span>
+                  <div class="metric-icon-box icon-indigo"><i class="fa-solid fa-receipt"></i></div>
+                </div>
+                <div class="metric-value" id="kpi-total-txns">0</div>
+                <div class="metric-subtext">Total recorded entries</div>
+              </div>
+            </div>
+
+            <!-- AI Spotlight Banner -->
+            <div class="ai-spotlight-banner" id="dashboard-ai-spotlight" style="display:none;">
+              <div class="ai-spotlight-content">
+                <i class="fa-solid fa-wand-magic-sparkles ai-sparkle-icon"></i>
+                <div>
+                  <div class="ai-spotlight-title" id="ai-spotlight-title">AI Insight</div>
+                  <div class="ai-spotlight-desc" id="ai-spotlight-text">Analyzing patterns...</div>
+                </div>
+              </div>
+              <button class="btn btn-secondary btn-sm" onclick="AppState.switchTab('ai')">
+                View All Insights <i class="fa-solid fa-arrow-right"></i>
+              </button>
+            </div>
+
+            <!-- Charts 2x2 Grid -->
+            <div class="charts-grid-2x2">
+              <!-- Chart 1: Monthly Spending Trend -->
+              <div class="card chart-card">
+                <div class="card-header-flex">
+                  <h3>Monthly Spending Trajectory</h3>
+                  <span class="badge-pill badge-neutral">Yearly Trend</span>
+                </div>
+                <div class="chart-container">
+                  <canvas id="dash-monthly-chart"></canvas>
+                </div>
+              </div>
+
+              <!-- Chart 2: Category Breakdown Bar Chart -->
+              <div class="card chart-card">
+                <div class="card-header-flex">
+                  <h3>Category Spending Comparison</h3>
+                  <span class="badge-pill badge-neutral">By Volume</span>
+                </div>
+                <div class="chart-container">
+                  <canvas id="dash-category-chart"></canvas>
+                </div>
+              </div>
+
+              <!-- Chart 3: Category Distribution Donut -->
+              <div class="card chart-card">
+                <div class="card-header-flex">
+                  <h3>Category Percentage Share</h3>
+                  <span class="badge-pill badge-neutral">Distribution</span>
+                </div>
+                <div class="chart-container">
+                  <canvas id="dash-donut-chart"></canvas>
+                </div>
+              </div>
+
+              <!-- Chart 4: Daily Spending Activity -->
+              <div class="card chart-card">
+                <div class="card-header-flex">
+                  <h3>Daily Spending Rhythm</h3>
+                  <span class="badge-pill badge-neutral">Current Month</span>
+                </div>
+                <div class="chart-container">
+                  <canvas id="dash-daily-chart"></canvas>
+                </div>
+              </div>
+            </div>
+
+            <!-- Where Is My Money Going Summary Strip -->
+            <div class="money-going-strip">
+              <div class="card-header-flex" style="margin-bottom:0;">
+                <div>
+                  <h3 style="font-size:1.1rem; color:#fff;">Where Is My Money Going?</h3>
+                  <p style="font-size:0.8rem; color:#94a3b8;">Automated peak expenditure detection</p>
+                </div>
+                <button class="btn btn-secondary btn-sm" onclick="AppState.switchTab('where-is-money')">
+                  Deep Dive Analysis <i class="fa-solid fa-arrow-right"></i>
+                </button>
+              </div>
+              <div class="money-going-grid">
+                <div class="money-stat-box">
+                  <div class="money-stat-label">Highest Expense</div>
+                  <div class="money-stat-value" id="stat-hi-expense">₹0.00</div>
+                  <div class="money-stat-sub" id="stat-hi-expense-sub">-</div>
+                </div>
+                <div class="money-stat-box">
+                  <div class="money-stat-label">Highest Category</div>
+                  <div class="money-stat-value" id="stat-hi-cat">-</div>
+                  <div class="money-stat-sub" id="stat-hi-cat-sub">₹0.00</div>
+                </div>
+                <div class="money-stat-box">
+                  <div class="money-stat-label">Peak Spending Day</div>
+                  <div class="money-stat-value" id="stat-hi-day">-</div>
+                  <div class="money-stat-sub" id="stat-hi-day-sub">₹0.00</div>
+                </div>
+                <div class="money-stat-box">
+                  <div class="money-stat-label">Highest Spending Month</div>
+                  <div class="money-stat-value" id="stat-hi-month">-</div>
+                  <div class="money-stat-sub" id="stat-hi-month-sub">₹0.00</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Recent Expenses Table -->
+            <div class="table-card">
+              <div class="card-header-flex" style="padding: 20px 22px 0 22px;">
+                <h3>Recent Expenses</h3>
+                <button class="btn btn-secondary btn-sm" onclick="AppState.switchTab('expenses')">
+                  View All Expenses <i class="fa-solid fa-arrow-right"></i>
+                </button>
+              </div>
+              <div class="table-responsive">
+                <table class="custom-table">
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Description</th>
+                      <th>Category</th>
+                      <th>Amount</th>
+                      <th>Payment Method</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="dashboard-recent-tbody">
+                    <!-- Populated dynamically -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- ================================================================
+             VIEW 2: ADD EXPENSE FORM
+             ================================================================ -->
+        <section class="view-section" id="view-add-expense">
+          <div style="max-width:760px; margin:0 auto;">
+            <div class="card">
+              <div class="card-header-flex" style="margin-bottom:24px;">
+                <div>
+                  <h3>Record New Expense</h3>
+                  <p style="font-size:0.8rem; color:#94a3b8;">Enter details below to immediately update dashboard metrics and AI insights</p>
+                </div>
+                <button class="btn btn-demo btn-sm" onclick="AppState.handleLoadDemoData()">
+                  <i class="fa-solid fa-wand-magic-sparkles"></i> Load Sample Data
+                </button>
+              </div>
+
+              <form id="standalone-expense-form" onsubmit="ExpensesView.handleAddExpenseForm(event)">
+                <div class="form-grid">
+                  <!-- Amount -->
+                  <div class="form-group">
+                    <label class="form-label" for="exp-amount">Amount (<span class="currency-label">₹</span>) <span class="req">*</span></label>
+                    <input type="number" step="0.01" min="0.01" class="form-control" id="exp-amount" placeholder="e.g. 500" required />
+                  </div>
+
+                  <!-- Category -->
+                  <div class="form-group">
+                    <label class="form-label" for="exp-category">Category <span class="req">*</span></label>
+                    <select class="form-control" id="exp-category" required>
+                      <!-- Dynamically populated -->
+                    </select>
+                  </div>
+
+                  <!-- Description -->
+                  <div class="form-group full-width">
+                    <label class="form-label" for="exp-description">Description <span class="req">*</span></label>
+                    <input type="text" class="form-control" id="exp-description" placeholder="e.g. Restaurant Dinner with Family" required />
+                  </div>
+
+                  <!-- Date -->
+                  <div class="form-group">
+                    <label class="form-label" for="exp-date">Date <span class="req">*</span></label>
+                    <input type="date" class="form-control" id="exp-date" required />
+                  </div>
+
+                  <!-- Payment Method -->
+                  <div class="form-group">
+                    <label class="form-label" for="exp-payment">Payment Method</label>
+                    <select class="form-control" id="exp-payment">
+                      <!-- Dynamically populated -->
+                    </select>
+                  </div>
+
+                  <!-- Notes -->
+                  <div class="form-group full-width">
+                    <label class="form-label" for="exp-notes">Notes (Optional)</label>
+                    <textarea class="form-control" id="exp-notes" placeholder="Additional notes, tags, or invoice references..."></textarea>
+                  </div>
+                </div>
+
+                <div class="form-actions">
+                  <button type="reset" class="btn btn-secondary">
+                    <i class="fa-solid fa-eraser"></i> Clear
+                  </button>
+                  <button type="submit" class="btn btn-primary">
+                    <i class="fa-solid fa-floppy-disk"></i> Add Expense
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </section>
+
+        <!-- ================================================================
+             VIEW 3: EXPENSE HISTORY & SEARCH/FILTERS
+             ================================================================ -->
+        <section class="view-section" id="view-expenses">
+          
+          <!-- Filter Controls Bar -->
+          <div class="filters-bar">
+            <div class="search-input-wrapper">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <input type="text" class="form-control" id="expense-search-input" placeholder="Search description, notes..." oninput="ExpensesView.applySearch(this.value)" />
+            </div>
+
+            <div class="filter-controls">
+              <select class="form-control" id="filter-category" onchange="ExpensesView.applyFilter('category', this.value)">
+                <!-- Dynamically populated -->
+              </select>
+
+              <select class="form-control" id="filter-payment" onchange="ExpensesView.applyFilter('payment_method', this.value)">
+                <!-- Dynamically populated -->
+              </select>
+
+              <input type="date" class="form-control" id="filter-start-date" title="Start Date" onchange="ExpensesView.applyFilter('start_date', this.value)" />
+              <input type="date" class="form-control" id="filter-end-date" title="End Date" onchange="ExpensesView.applyFilter('end_date', this.value)" />
+
+              <button class="btn btn-secondary btn-sm" onclick="ExpensesView.resetFilters()" title="Reset All Filters">
+                <i class="fa-solid fa-filter-circle-xmark"></i> Reset
+              </button>
+
+              <button class="btn btn-secondary btn-sm" onclick="ExpensesView.exportCSV()" title="Export filtered records as CSV">
+                <i class="fa-solid fa-file-csv"></i> Export CSV
+              </button>
+            </div>
+          </div>
+
+          <!-- History Table Card -->
+          <div class="table-card">
+            <div class="table-responsive">
+              <table class="custom-table">
+                <thead>
+                  <tr>
+                    <th class="sortable" onclick="ExpensesView.sortBy('date')">Date <i class="fa-solid fa-sort"></i></th>
+                    <th class="sortable" onclick="ExpensesView.sortBy('description')">Description <i class="fa-solid fa-sort"></i></th>
+                    <th class="sortable" onclick="ExpensesView.sortBy('category')">Category <i class="fa-solid fa-sort"></i></th>
+                    <th class="sortable" onclick="ExpensesView.sortBy('amount')">Amount <i class="fa-solid fa-sort"></i></th>
+                    <th>Payment Method</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="expenses-table-tbody">
+                  <!-- Populated dynamically -->
+                </tbody>
+              </table>
+            </div>
+            <div class="table-footer">
+              <span id="filter-summary-count">0 items</span>
+              <span id="filter-summary-amount" style="font-weight:700; color:#fff;">Total: ₹0.00</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- ================================================================
+             VIEW 4: MONTHLY ANALYTICS
+             ================================================================ -->
+        <section class="view-section" id="view-analytics">
+          
+          <!-- 4 KPI Cards -->
+          <div class="metrics-grid">
+            <div class="card metric-card">
+              <div class="metric-header">
+                <span class="metric-title">Total Yearly Spending</span>
+                <div class="metric-icon-box icon-purple"><i class="fa-solid fa-calendar-days"></i></div>
+              </div>
+              <div class="metric-value" id="analytic-year-total">₹0.00</div>
+              <div class="metric-subtext">Aggregated for selected year</div>
+            </div>
+
+            <div class="card metric-card">
+              <div class="metric-header">
+                <span class="metric-title">Average Monthly Spend</span>
+                <div class="metric-icon-box icon-cyan"><i class="fa-solid fa-calculator"></i></div>
+              </div>
+              <div class="metric-value" id="analytic-year-avg">₹0.00</div>
+              <div class="metric-subtext">Active months average</div>
+            </div>
+
+            <div class="card metric-card">
+              <div class="metric-header">
+                <span class="metric-title">Highest Spending Month</span>
+                <div class="metric-icon-box icon-rose"><i class="fa-solid fa-arrow-trend-up"></i></div>
+              </div>
+              <div class="metric-value" id="analytic-hi-month" style="font-size:1.5rem;">-</div>
+              <div class="metric-subtext" id="analytic-hi-month-sub">₹0.00</div>
+            </div>
+
+            <div class="card metric-card">
+              <div class="metric-header">
+                <span class="metric-title">Lowest Spending Month</span>
+                <div class="metric-icon-box icon-emerald"><i class="fa-solid fa-arrow-trend-down"></i></div>
+              </div>
+              <div class="metric-value" id="analytic-lo-month" style="font-size:1.5rem;">-</div>
+              <div class="metric-subtext" id="analytic-lo-month-sub">₹0.00</div>
+            </div>
+          </div>
+
+          <!-- Monthly Progression Chart -->
+          <div class="card chart-card" style="margin-bottom:28px;">
+            <div class="card-header-flex">
+              <h3>Monthly Expense Progression (January – December)</h3>
+              <span class="badge-pill badge-neutral">Full Year Trajectory</span>
+            </div>
+            <div class="chart-container">
+              <canvas id="analytics-monthly-chart"></canvas>
+            </div>
+          </div>
+
+          <!-- Month-by-Month Cards Grid (12 Months) -->
+          <div class="card-header-flex" style="margin-bottom:16px;">
+            <h3>Month-by-Month Breakdown</h3>
+            <span style="color:#94a3b8; font-size:0.8rem;">Totals, transaction volumes & month-over-month deltas</span>
+          </div>
+          <div class="metrics-grid" id="monthly-cards-grid">
+            <!-- Populated dynamically -->
+          </div>
+        </section>
+
+        <!-- ================================================================
+             VIEW 5: CATEGORIES
+             ================================================================ -->
+        <section class="view-section" id="view-categories">
+          
+          <!-- Category Highlight Banner -->
+          <div class="ai-spotlight-banner" style="margin-bottom:24px;">
+            <div class="ai-spotlight-content">
+              <i class="fa-solid fa-chart-pie ai-sparkle-icon" style="color:var(--cyan);"></i>
+              <div>
+                <div class="ai-spotlight-title">Category Spending Analysis</div>
+                <div class="ai-spotlight-desc" id="category-highlight-banner">Analyzing category distributions...</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Charts Grid -->
+          <div class="charts-grid-2x2">
+            <div class="card chart-card">
+              <div class="card-header-flex">
+                <h3>Category Spending Distribution</h3>
+                <span class="badge-pill badge-neutral">Percentage Share</span>
+              </div>
+              <div class="chart-container">
+                <canvas id="analytics-cat-donut-chart"></canvas>
+              </div>
+            </div>
+
+            <div class="card chart-card">
+              <div class="card-header-flex">
+                <h3>Category Volume Comparison</h3>
+                <span class="badge-pill badge-neutral">Absolute Amounts</span>
+              </div>
+              <div class="chart-container">
+                <canvas id="analytics-cat-bar-chart"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <!-- Category Breakdown Cards Grid -->
+          <div class="card-header-flex" style="margin-bottom:16px;">
+            <h3>Category Breakdown Details</h3>
+            <span style="color:#94a3b8; font-size:0.8rem;">Average ticket size and maximum individual expense per category</span>
+          </div>
+          <div class="metrics-grid" id="category-cards-grid">
+            <!-- Populated dynamically -->
+          </div>
+        </section>
+
+        <!-- ================================================================
+             VIEW 5B: WHERE IS MY MONEY GOING?
+             ================================================================ -->
+        <section class="view-section" id="view-where-is-money">
+          <div class="card-header-flex" style="margin-bottom:20px;">
+            <div>
+              <h3>Where Is My Money Going?</h3>
+              <p style="font-size:0.82rem; color:#94a3b8;">Automated financial diagnosis & top spending item ranking</p>
+            </div>
+          </div>
+
+          <!-- Top 5 Largest Expenses Table -->
+          <div class="table-card">
+            <div class="card-header-flex" style="padding: 20px 22px 0 22px;">
+              <h3>Top 5 Largest Individual Expenses</h3>
+              <span class="badge-pill badge-neutral">Highest Ticket Items</span>
+            </div>
+            <div class="table-responsive">
+              <table class="custom-table">
+                <thead>
+                  <tr>
+                    <th>Rank</th>
+                    <th>Description</th>
+                    <th>Category</th>
+                    <th>Amount</th>
+                    <th>Date</th>
+                  </tr>
+                </thead>
+                <tbody id="top-5-tbody">
+                  <!-- Populated dynamically -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ================================================================
+             VIEW 6: AI INSIGHTS & HEALTH SCORE
+             ================================================================ -->
+        <section class="view-section" id="view-ai">
+          
+          <div class="ai-dashboard-grid">
+            
+            <!-- Left Column: Expense Health Score -->
+            <div class="card health-gauge-card">
+              <h3 style="font-size:1.1rem; color:#fff;">Expense Health Score</h3>
+              <p style="font-size:0.78rem; color:#94a3b8;">5-Factor Financial Discipline Index</p>
+
+              <div class="gauge-circle" id="health-gauge-circle">
+                <div class="gauge-inner">
+                  <div class="gauge-number" id="health-gauge-number">--</div>
+                  <div class="gauge-label">out of 100</div>
+                </div>
+              </div>
+
+              <div class="badge-pill" id="health-grade-text" style="background:rgba(16,185,129,0.2); color:#34d399; font-size:0.88rem; padding:6px 14px; margin-bottom:12px;">
+                Calculating score...
+              </div>
+
+              <p style="font-size:0.84rem; color:#cbd5e1; line-height:1.45; margin-bottom:16px;" id="health-summary-text">
+                Evaluating spending consistency, budget adherence, and category concentration...
+              </p>
+
+              <!-- Breakdown Factors List -->
+              <div class="health-breakdown-list" id="health-breakdown-list">
+                <!-- Dynamically populated -->
+              </div>
+
+              <!-- Actionable Tips -->
+              <div style="width:100%; text-align:left; margin-top:20px; border-top:1px solid var(--border-color); padding-top:16px;">
+                <div style="font-weight:700; font-size:0.85rem; color:#fff; margin-bottom:10px;">
+                  <i class="fa-solid fa-lightbulb" style="color:var(--amber);"></i> Tips to Elevate Score:
+                </div>
+                <ul id="health-tips-list" style="list-style:none; padding:0;">
+                  <!-- Dynamically populated -->
+                </ul>
+              </div>
+            </div>
+
+            <!-- Right Column: AI Burn Rate Prediction & Smart Suggestions -->
+            <div style="display:flex; flex-direction:column; gap:20px;">
+              
+              <!-- Month-End Prediction Card -->
+              <div class="card" style="background: linear-gradient(135deg, rgba(30,41,59,0.8) 0%, rgba(15,23,42,0.8) 100%);">
+                <div class="card-header-flex" style="margin-bottom:12px;">
+                  <div>
+                    <h3 style="font-size:1rem; color:#fff;"><i class="fa-solid fa-crystal-ball" style="color:var(--cyan);"></i> AI Month-End Prediction</h3>
+                    <p style="font-size:0.75rem; color:#94a3b8;">Velocity-based spending estimate</p>
+                  </div>
+                  <span class="badge-pill" id="pred-confidence" style="background:rgba(6,182,212,0.2); color:#22d3ee;">High (88%)</span>
+                </div>
+
+                <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:16px; margin:16px 0;">
+                  <div>
+                    <div style="font-size:0.72rem; color:#94a3b8; text-transform:uppercase; font-weight:600;">Projected Total</div>
+                    <div style="font-size:1.4rem; font-weight:800; color:#fff;" id="pred-projected-amt">₹0.00</div>
+                  </div>
+                  <div>
+                    <div style="font-size:0.72rem; color:#94a3b8; text-transform:uppercase; font-weight:600;">Daily Burn Rate</div>
+                    <div style="font-size:1.1rem; font-weight:700; color:#38bdf8;" id="pred-burn-rate">₹0 / day</div>
+                  </div>
+                  <div>
+                    <div style="font-size:0.72rem; color:#94a3b8; text-transform:uppercase; font-weight:600;">Remaining Time</div>
+                    <div style="font-size:1.1rem; font-weight:700; color:#94a3b8;" id="pred-days-left">0 days</div>
+                  </div>
+                </div>
+
+                <p style="font-size:0.82rem; color:#cbd5e1;" id="pred-message">Calculating linear velocity projection...</p>
+                <div id="pred-warning-banner" class="ai-spotlight-banner" style="display:none; margin-top:12px; padding:10px 14px; font-size:0.8rem; background:rgba(244,63,94,0.15); border-color:rgba(244,63,94,0.3); color:#fecdd3;"></div>
+              </div>
+
+              <!-- Dynamic Smart Suggestions Feed -->
+              <div class="card-header-flex" style="margin-bottom:0;">
+                <h3 style="font-size:1rem; color:#fff;"><i class="fa-solid fa-robot" style="color:var(--primary-light);"></i> Smart Suggestions & Patterns</h3>
+                <span style="font-size:0.75rem; color:#94a3b8;">Dynamically computed from actual data</span>
+              </div>
+
+              <div class="suggestions-feed" id="ai-suggestions-feed">
+                <!-- Dynamically populated -->
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Interactive AI Advisor Chat -->
+          <div class="ai-chat-card">
+            <div class="card-header-flex">
+              <div>
+                <h3 style="font-size:1.05rem; color:#fff;"><i class="fa-solid fa-comments" style="color:var(--primary-light);"></i> Ask ExpenseAI Advisor</h3>
+                <p style="font-size:0.78rem; color:#94a3b8;">Get instant tailored answers, savings strategies, and spending analysis</p>
+              </div>
+            </div>
+
+            <!-- Quick Prompt Pills -->
+            <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:12px;">
+              <button class="btn btn-secondary btn-sm" onclick="AiInsightsView.askPreset('How can I cut down my food and dining expenses?')">
+                🍔 How to reduce Food expenses?
+              </button>
+              <button class="btn btn-secondary btn-sm" onclick="AiInsightsView.askPreset('What was my single largest expense and why?')">
+                📈 What was my highest expense?
+              </button>
+              <button class="btn btn-secondary btn-sm" onclick="AiInsightsView.askPreset('Give me a 3-step plan to save 15% more money this month.')">
+                💡 3-step savings strategy
+              </button>
+            </div>
+
+            <form onsubmit="AiInsightsView.handleAiChat(event)" class="chat-input-row">
+              <input type="text" class="form-control" id="ai-chat-input" placeholder="Type your financial question (e.g., 'How can I optimize my monthly budget?')..." style="flex:1;" />
+              <button type="submit" class="btn btn-primary" id="ai-chat-submit-btn">
+                <i class="fa-solid fa-paper-plane"></i> Ask AI
+              </button>
+            </form>
+
+            <div class="chat-response-box" id="ai-chat-response">
+              <div id="ai-chat-response-text"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ================================================================
+             VIEW 7: BUDGET PLANNER
+             ================================================================ -->
+        <section class="view-section" id="view-budget">
+          
+          <!-- Monthly Budget Hero Card -->
+          <div class="budget-hero-card">
+            <div class="budget-hero-grid">
+              <div class="budget-stat-item">
+                <span class="budget-stat-label">Monthly Planned Budget</span>
+                <span class="budget-stat-amount" id="budget-total-set">₹0.00</span>
+              </div>
+              <div class="budget-stat-item">
+                <span class="budget-stat-label">Total Spent So Far</span>
+                <span class="budget-stat-amount" id="budget-spent-amt">₹0.00</span>
+              </div>
+              <div class="budget-stat-item">
+                <span class="budget-stat-label">Remaining Safe Balance</span>
+                <span class="budget-stat-amount" id="budget-remaining-amt" style="color:var(--emerald);">₹0.00</span>
+              </div>
+            </div>
+
+            <div style="margin-bottom:8px; display:flex; justify-content:space-between; font-size:0.85rem; font-weight:600;">
+              <span>Budget Consumption</span>
+              <span id="budget-pct-used">0%</span>
+            </div>
+
+            <div class="budget-progress-track">
+              <div class="budget-progress-fill" id="budget-hero-fill" style="width:0%;"></div>
+            </div>
+
+            <div style="margin-top:14px; font-size:0.82rem; color:#94a3b8; display:flex; justify-content:space-between;">
+              <span id="budget-daily-allowance">₹0.00 / day remaining</span>
+              <span>Reset on 1st of every month</span>
+            </div>
+
+            <div id="budget-hero-warning" style="display:none; margin-top:16px;"></div>
+          </div>
+
+          <!-- Configure Budgets Forms Grid -->
+          <div style="display:grid; grid-template-columns: 1fr 1.4fr; gap:24px;">
+            
+            <!-- Set Overall Budget Form -->
+            <div class="card">
+              <h3 style="font-size:1rem; margin-bottom:16px;">Set Overall Monthly Budget</h3>
+              <form onsubmit="BudgetView.handleSaveMonthlyBudget(event)">
+                <div class="form-group" style="margin-bottom:16px;">
+                  <label class="form-label" for="input-monthly-budget">Monthly Spending Target (<span class="currency-label">₹</span>)</label>
+                  <input type="number" step="100" min="0" class="form-control" id="input-monthly-budget" placeholder="e.g. 50000" required />
+                </div>
+                <button type="submit" class="btn btn-primary" style="width:100%;">
+                  <i class="fa-solid fa-floppy-disk"></i> Update Monthly Budget
+                </button>
+              </form>
+
+              <hr style="border:0; border-top:1px solid var(--border-color); margin:24px 0;" />
+
+              <h3 style="font-size:1rem; margin-bottom:16px;">Add Category Budget Cap</h3>
+              <form onsubmit="BudgetView.handleAddCategoryBudget(event)">
+                <div class="form-group" style="margin-bottom:12px;">
+                  <label class="form-label" for="budget-cat-select">Category</label>
+                  <select class="form-control" id="budget-cat-select" required>
+                    <!-- Dynamically populated -->
+                  </select>
+                </div>
+                <div class="form-group" style="margin-bottom:16px;">
+                  <label class="form-label" for="budget-cat-amount">Category Cap (<span class="currency-label">₹</span>)</label>
+                  <input type="number" step="100" min="1" class="form-control" id="budget-cat-amount" placeholder="e.g. 8000" required />
+                </div>
+                <button type="submit" class="btn btn-secondary" style="width:100%;">
+                  <i class="fa-solid fa-plus"></i> Save Category Budget
+                </button>
+              </form>
+            </div>
+
+            <!-- Category Budgets Table -->
+            <div class="table-card">
+              <div class="card-header-flex" style="padding: 20px 22px 0 22px;">
+                <h3>Category-Specific Budgets</h3>
+                <span class="badge-pill badge-neutral">Target Tracking</span>
+              </div>
+              <div class="table-responsive">
+                <table class="custom-table">
+                  <thead>
+                    <tr>
+                      <th>Category</th>
+                      <th>Budget</th>
+                      <th>Spent</th>
+                      <th>Remaining</th>
+                      <th>Progress</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody id="category-budgets-tbody">
+                    <!-- Dynamically populated -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- ================================================================
+             VIEW 8: SETTINGS
+             ================================================================ -->
+        <section class="view-section" id="view-settings">
+          <div style="max-width:760px; margin:0 auto;">
+            <div class="card" style="margin-bottom:24px;">
+              <h3 style="font-size:1.1rem; margin-bottom:16px;">Application & Currency Settings</h3>
+              
+              <form onsubmit="AppState.handleSaveSettings(event)">
+                <div class="form-grid">
+                  <div class="form-group">
+                    <label class="form-label" for="settings-currency">Display Currency</label>
+                    <select class="form-control" id="settings-currency">
+                      <option value="₹">Indian Rupee (₹ INR)</option>
+                      <option value="$">US Dollar ($ USD)</option>
+                      <option value="€">Euro (€ EUR)</option>
+                      <option value="£">British Pound (£ GBP)</option>
+                      <option value="¥">Japanese Yen (¥ JPY)</option>
+                    </select>
+                  </div>
+
+                  <div class="form-group">
+                    <label class="form-label">Active AI Engine</label>
+                    <input type="text" class="form-control" value="Dual-Engine (Local Rules + Gemini Flash)" disabled />
+                  </div>
+
+                  <div class="form-group full-width">
+                    <label class="form-label" for="settings-gemini-key">Google Gemini API Key (Optional)</label>
+                    <input type="password" class="form-control" id="settings-gemini-key" placeholder="Enter Gemini API key to activate Cloud AI recommendations..." />
+                    <span style="font-size:0.75rem; color:#64748b; margin-top:4px;">When left empty, ExpenseAI runs 100% locally with high-precision statistical pattern algorithms.</span>
+                  </div>
+                </div>
+
+                <div class="form-actions">
+                  <button type="submit" class="btn btn-primary">
+                    <i class="fa-solid fa-floppy-disk"></i> Save Settings
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            <!-- Data Management Card -->
+            <div class="card">
+              <h3 style="font-size:1.1rem; margin-bottom:16px;">Database Management & Sample Data</h3>
+              <p style="font-size:0.85rem; color:#94a3b8; margin-bottom:20px;">
+                ExpenseAI stores all records persistently in a local SQLite database (`expenses.db`). You can load realistic demo datasets for testing or clear all records.
+              </p>
+
+              <div style="display:flex; gap:16px; flex-wrap:wrap;">
+                <button class="btn btn-demo" onclick="AppState.handleLoadDemoData()">
+                  <i class="fa-solid fa-database"></i> Populate 30+ Sample Transactions
+                </button>
+                <button class="btn btn-danger" onclick="AppState.handleResetData()">
+                  <i class="fa-solid fa-trash-can"></i> Clear All Data & Reset
+                </button>
+                <button class="btn btn-secondary" onclick="ExpensesView.exportCSV()">
+                  <i class="fa-solid fa-download"></i> Export Data (CSV)
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- ====================================================================
+       MODALS
+       ==================================================================== -->
+
+  <!-- Modal 1: Quick Add Expense Modal -->
+  <div class="modal-backdrop" id="add-expense-modal">
+    <div class="modal-window">
+      <div class="modal-header">
+        <h3>Add New Expense</h3>
+        <button class="modal-close" onclick="AppState.closeModal('add-expense-modal')">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form onsubmit="ExpensesView.handleAddExpenseForm(event)">
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label">Amount (<span class="currency-label">₹</span>) <span class="req">*</span></label>
+              <input type="number" step="0.01" min="0.01" class="form-control" id="modal-exp-amount" placeholder="e.g. 500" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Category <span class="req">*</span></label>
+              <select class="form-control" id="modal-exp-category" required>
+                <!-- Populated dynamically -->
+              </select>
+            </div>
+            <div class="form-group full-width">
+              <label class="form-label">Description <span class="req">*</span></label>
+              <input type="text" class="form-control" id="modal-exp-description" placeholder="e.g. Restaurant Lunch" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Date <span class="req">*</span></label>
+              <input type="date" class="form-control" id="modal-exp-date" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Payment Method</label>
+              <select class="form-control" id="modal-exp-payment">
+                <!-- Populated dynamically -->
+              </select>
+            </div>
+            <div class="form-group full-width">
+              <label class="form-label">Notes</label>
+              <textarea class="form-control" id="modal-exp-notes" placeholder="Optional notes..."></textarea>
+            </div>
+          </div>
+          <div class="form-actions">
+            <button type="button" class="btn btn-secondary" onclick="AppState.closeModal('add-expense-modal')">Cancel</button>
+            <button type="submit" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Save Expense</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 2: Edit Expense Modal -->
+  <div class="modal-backdrop" id="edit-expense-modal">
+    <div class="modal-window">
+      <div class="modal-header">
+        <h3>Edit Expense</h3>
+        <button class="modal-close" onclick="AppState.closeModal('edit-expense-modal')">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form onsubmit="ExpensesView.handleEditSubmit(event)">
+          <input type="hidden" id="edit-exp-id" />
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label">Amount (<span class="currency-label">₹</span>) <span class="req">*</span></label>
+              <input type="number" step="0.01" min="0.01" class="form-control" id="edit-exp-amount" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Category <span class="req">*</span></label>
+              <select class="form-control" id="edit-exp-category" required>
+                <!-- Populated dynamically -->
+              </select>
+            </div>
+            <div class="form-group full-width">
+              <label class="form-label">Description <span class="req">*</span></label>
+              <input type="text" class="form-control" id="edit-exp-description" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Date <span class="req">*</span></label>
+              <input type="date" class="form-control" id="edit-exp-date" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Payment Method</label>
+              <select class="form-control" id="edit-exp-payment">
+                <!-- Populated dynamically -->
+              </select>
+            </div>
+            <div class="form-group full-width">
+              <label class="form-label">Notes</label>
+              <textarea class="form-control" id="edit-exp-notes"></textarea>
+            </div>
+          </div>
+          <div class="form-actions">
+            <button type="button" class="btn btn-secondary" onclick="AppState.closeModal('edit-expense-modal')">Cancel</button>
+            <button type="submit" class="btn btn-primary"><i class="fa-solid fa-check"></i> Update Expense</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 3: View Details Modal -->
+  <div class="modal-backdrop" id="details-modal">
+    <div class="modal-window">
+      <div class="modal-header">
+        <h3>Expense Details</h3>
+        <button class="modal-close" onclick="AppState.closeModal('details-modal')">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div style="display:flex; flex-direction:column; gap:16px;">
+          <div>
+            <div style="font-size:0.75rem; color:#94a3b8; text-transform:uppercase; font-weight:600;">Amount</div>
+            <div style="font-size:1.8rem; font-weight:800; color:#fff;" id="detail-amount">₹0.00</div>
+          </div>
+          <div>
+            <div style="font-size:0.75rem; color:#94a3b8; text-transform:uppercase; font-weight:600;">Description</div>
+            <div style="font-size:1.1rem; font-weight:700; color:#fff;" id="detail-description">-</div>
+          </div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+            <div>
+              <div style="font-size:0.75rem; color:#94a3b8; text-transform:uppercase; font-weight:600;">Category</div>
+              <div id="detail-category" style="margin-top:4px;">-</div>
+            </div>
+            <div>
+              <div style="font-size:0.75rem; color:#94a3b8; text-transform:uppercase; font-weight:600;">Payment Method</div>
+              <div id="detail-payment" style="margin-top:4px;">-</div>
+            </div>
+          </div>
+          <div>
+            <div style="font-size:0.75rem; color:#94a3b8; text-transform:uppercase; font-weight:600;">Transaction Date</div>
+            <div id="detail-date" style="color:#cbd5e1; font-weight:500;">-</div>
+          </div>
+          <div>
+            <div style="font-size:0.75rem; color:#94a3b8; text-transform:uppercase; font-weight:600;">Notes</div>
+            <div id="detail-notes" style="color:#cbd5e1; background:rgba(255,255,255,0.03); padding:12px; border-radius:var(--radius-sm); margin-top:4px;">-</div>
+          </div>
+          <div style="font-size:0.75rem; color:#64748b;">
+            Logged on: <span id="detail-created">-</span>
+          </div>
+        </div>
+        <div class="form-actions" style="margin-top:20px;">
+          <button type="button" class="btn btn-secondary" onclick="AppState.closeModal('details-modal')">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- Application Scripts -->
+  <script src="js/api.js"></script>
+  <script src="js/charts.js"></script>
+  <script src="js/dashboard.js"></script>
+  <script src="js/expenses.js"></script>
+  <script src="js/analytics_view.js"></script>
+  <script src="js/ai_insights.js"></script>
+  <script src="js/budget.js"></script>
+  <script src="js/app.js"></script>
+
+  <!-- Script to sync Modal Add Expense inputs with standalone elements -->
+  <script>
+    // Hook modal add form to shared logic
+    document.addEventListener('DOMContentLoaded', () => {
+      const modalForm = document.querySelector('#add-expense-modal form');
+      if (modalForm) {
+        modalForm.addEventListener('submit', (e) => {
+          e.preventDefault();
+          const amount = parseFloat(document.getElementById('modal-exp-amount').value);
+          const category = document.getElementById('modal-exp-category').value;
+          const description = document.getElementById('modal-exp-description').value.trim();
+          const date = document.getElementById('modal-exp-date').value;
+          const payment_method = document.getElementById('modal-exp-payment').value;
+          const notes = document.getElementById('modal-exp-notes').value.trim();
+
+          API.createExpense({ amount, category, description, date, payment_method, notes })
+            .then(res => {
+              AppState.showToast(`Saved ₹${amount.toLocaleString()} on ${category}!`, 'success');
+              AppState.closeModal('add-expense-modal');
+              AppState.refreshActiveView();
+              AppState.refreshSidebarHealth();
+              modalForm.reset();
+            })
+            .catch(err => AppState.showToast(err.message, 'error'));
+        });
+      }
+
+      // Populate modal date to today
+      const mDate = document.getElementById('modal-exp-date');
+      if (mDate) mDate.value = new Date().toISOString().split('T')[0];
+
+      // Mirror category options to modal select
+      setTimeout(() => {
+        const catSelect = document.getElementById('exp-category');
+        const modalCatSelect = document.getElementById('modal-exp-category');
+        if (catSelect && modalCatSelect) {
+          modalCatSelect.innerHTML = catSelect.innerHTML;
+        }
+
+        const pmSelect = document.getElementById('exp-payment');
+        const modalPmSelect = document.getElementById('modal-exp-payment');
+        if (pmSelect && modalPmSelect) {
+          modalPmSelect.innerHTML = pmSelect.innerHTML;
+        }
+      }, 500);
+    });
+  </script>
+</body>
+</html>
