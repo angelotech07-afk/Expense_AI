@@ -1,0 +1,959 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ExpenseAI — AI-Powered Personal Expense Analysis System</title>
+  <meta name="description" content="Understand your spending, identify financial patterns, forecast future expenses, and make smarter decisions with ExpenseAI.">
+  
+  <!-- Google Fonts: Inter & Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<div id="app-container">
+  
+  <!-- =========================================================================
+       SIDEBAR NAVIGATION
+       ========================================================================= -->
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <div class="brand-icon">
+        <i class="fas fa-brain"></i>
+      </div>
+      <div class="brand-info">
+        <h1>ExpenseAI</h1>
+        <span class="brand-badge">AI Financial Suite</span>
+      </div>
+    </div>
+
+    <ul class="nav-menu">
+      <li class="nav-item active" data-view="dashboard" id="nav-dashboard">
+        <i class="fas fa-chart-pie"></i>
+        <span>Dashboard</span>
+      </li>
+      <li class="nav-item" data-view="add-expense" id="nav-add-expense">
+        <i class="fas fa-plus-circle"></i>
+        <span>Add Expense</span>
+      </li>
+      <li class="nav-item" data-view="expenses" id="nav-expenses">
+        <i class="fas fa-receipt"></i>
+        <span>Expense History</span>
+      </li>
+      <li class="nav-item" data-view="analytics" id="nav-analytics">
+        <i class="fas fa-chart-line"></i>
+        <span>Visual Analytics</span>
+      </li>
+      <li class="nav-item" data-view="where-money-goes" id="nav-where-money-goes">
+        <i class="fas fa-search-dollar"></i>
+        <span>Where Money Goes</span>
+      </li>
+      <li class="nav-item" data-view="ai-insights" id="nav-ai-insights">
+        <i class="fas fa-robot"></i>
+        <span>AI Insights & Health</span>
+      </li>
+      <li class="nav-item" data-view="budget" id="nav-budget">
+        <i class="fas fa-wallet"></i>
+        <span>Budget & Goals</span>
+      </li>
+      <li class="nav-item" data-view="settings" id="nav-settings">
+        <i class="fas fa-sliders-h"></i>
+        <span>Settings & Demo</span>
+      </li>
+    </ul>
+
+    <!-- Sidebar Mini Budget Widget -->
+    <div class="sidebar-footer">
+      <div class="budget-widget-mini">
+        <div class="budget-widget-header">
+          <span>Monthly Budget</span>
+          <i class="fas fa-shield-alt" style="color: #818cf8;"></i>
+        </div>
+        <div class="progress-bar-container" style="margin-bottom: 6px;">
+          <div class="progress-bar-fill" id="sidebar-budget-bar" style="width: 0%;"></div>
+        </div>
+        <div style="font-size: 11px; color: var(--text-dim);" id="sidebar-budget-text">
+          Loading budget...
+        </div>
+      </div>
+      <div style="font-size: 11px; color: var(--text-dim); text-align: center;">
+        ExpenseAI v1.0 • 2026
+      </div>
+    </div>
+  </aside>
+
+  <!-- =========================================================================
+       MAIN WRAPPER
+       ========================================================================= -->
+  <div class="main-wrapper">
+    
+    <!-- Top Header Sticky Bar -->
+    <header class="top-header">
+      <div class="header-left">
+        <button class="mobile-menu-btn" id="mobile-menu-btn" aria-label="Toggle Navigation">
+          <i class="fas fa-bars"></i>
+        </button>
+        <div class="page-title">
+          <h2 id="header-title">Dashboard Overview</h2>
+          <p class="page-subtitle" id="header-subtitle">Understand your spending and make smarter decisions</p>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <!-- Currency Selector -->
+        <select class="filter-select" id="currency-selector" title="Select Currency">
+          <option value="₹">₹ INR (Indian Rupee)</option>
+          <option value="$">$ USD (US Dollar)</option>
+          <option value="€">€ EUR (Euro)</option>
+          <option value="£">£ GBP (British Pound)</option>
+        </select>
+
+        <!-- Quick Sample Data Button -->
+        <button class="btn btn-secondary btn-sm" id="btn-header-seed" title="Load demo expenses">
+          <i class="fas fa-database"></i>
+          <span>Sample Data</span>
+        </button>
+
+        <!-- Primary Action Button -->
+        <button class="btn btn-primary" id="btn-quick-add">
+          <i class="fas fa-plus"></i>
+          <span>Add Expense</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Dynamic Content Views -->
+    <main class="content-container">
+      
+      <!-- =====================================================================
+           VIEW 1: DASHBOARD OVERVIEW
+           ===================================================================== -->
+      <section class="view-section active" id="view-dashboard">
+        
+        <!-- Live AI Top Insight Banner -->
+        <div class="ai-hero-banner" id="ai-hero-banner" style="display: none;">
+          <div class="ai-banner-left">
+            <div class="ai-glow-avatar">
+              <i class="fas fa-sparkles"></i>
+            </div>
+            <div class="ai-banner-content">
+              <h4><span class="ai-tag">AI Insight</span> <span id="ai-banner-title">Analyzing Spending...</span></h4>
+              <p id="ai-banner-text">ExpenseAI is actively computing your category patterns and monthly velocity.</p>
+            </div>
+          </div>
+          <button class="btn btn-secondary btn-sm" onclick="switchView('ai-insights')">
+            <span>View All Insights</span>
+            <i class="fas fa-arrow-right"></i>
+          </button>
+        </div>
+
+        <!-- 6 KPI Summary Cards Grid -->
+        <div class="kpi-grid">
+          <!-- KPI 1: Total Expenses -->
+          <div class="kpi-card">
+            <div class="kpi-header">
+              <span class="kpi-label">Total Expenses</span>
+              <div class="kpi-icon-pill primary"><i class="fas fa-coins"></i></div>
+            </div>
+            <div class="kpi-value" id="kpi-total-expenses">₹0</div>
+            <div class="kpi-subtext" id="kpi-total-count-sub">All-time recorded spend</div>
+          </div>
+
+          <!-- KPI 2: This Month -->
+          <div class="kpi-card emerald">
+            <div class="kpi-header">
+              <span class="kpi-label">This Month</span>
+              <div class="kpi-icon-pill emerald"><i class="fas fa-calendar-alt"></i></div>
+            </div>
+            <div class="kpi-value" id="kpi-this-month">₹0</div>
+            <div class="kpi-subtext">
+              <span class="trend-badge down" id="kpi-mom-badge">0% vs last mo</span>
+            </div>
+          </div>
+
+          <!-- KPI 3: Daily Average -->
+          <div class="kpi-card cyan">
+            <div class="kpi-header">
+              <span class="kpi-label">Daily Average</span>
+              <div class="kpi-icon-pill cyan"><i class="fas fa-tachometer-alt"></i></div>
+            </div>
+            <div class="kpi-value" id="kpi-avg-daily">₹0</div>
+            <div class="kpi-subtext" id="kpi-daily-month-name">Pace for current month</div>
+          </div>
+
+          <!-- KPI 4: Highest Expense -->
+          <div class="kpi-card amber">
+            <div class="kpi-header">
+              <span class="kpi-label">Highest Expense</span>
+              <div class="kpi-icon-pill amber"><i class="fas fa-fire"></i></div>
+            </div>
+            <div class="kpi-value" id="kpi-highest-expense">₹0</div>
+            <div class="kpi-subtext" id="kpi-highest-desc" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">No records yet</div>
+          </div>
+
+          <!-- KPI 5: Top Category -->
+          <div class="kpi-card rose">
+            <div class="kpi-header">
+              <span class="kpi-label">Top Category</span>
+              <div class="kpi-icon-pill rose"><i class="fas fa-chart-pie"></i></div>
+            </div>
+            <div class="kpi-value" id="kpi-top-category" style="font-size: 20px;">N/A</div>
+            <div class="kpi-subtext" id="kpi-top-cat-sub">0% of total spend</div>
+          </div>
+
+          <!-- KPI 6: Transactions -->
+          <div class="kpi-card violet">
+            <div class="kpi-header">
+              <span class="kpi-label">Transactions</span>
+              <div class="kpi-icon-pill violet"><i class="fas fa-receipt"></i></div>
+            </div>
+            <div class="kpi-value" id="kpi-tx-count">0</div>
+            <div class="kpi-subtext">Total logged entries</div>
+          </div>
+        </div>
+
+        <!-- Dashboard Charts Preview -->
+        <div class="charts-grid-dual">
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">
+                <i class="fas fa-chart-area"></i>
+                <span>Monthly Spending Curve (2026)</span>
+              </div>
+              <button class="btn btn-secondary btn-sm" onclick="switchView('analytics')">
+                <span>Detailed Analytics</span>
+              </button>
+            </div>
+            <div class="chart-wrapper">
+              <canvas id="chart-monthly-trend"></canvas>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">
+                <i class="fas fa-pie-chart"></i>
+                <span>Category Distribution</span>
+              </div>
+            </div>
+            <div class="chart-wrapper">
+              <canvas id="chart-category-donut"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent Transactions Preview -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">
+              <i class="fas fa-history"></i>
+              <span>Recent Expenses</span>
+            </div>
+            <button class="btn btn-secondary btn-sm" onclick="switchView('expenses')">
+              <span>View Full History</span>
+              <i class="fas fa-arrow-right"></i>
+            </button>
+          </div>
+          <div id="dashboard-recent-expenses">
+            <!-- Populated via JavaScript -->
+          </div>
+        </div>
+      </section>
+
+      <!-- =====================================================================
+           VIEW 2: ADD EXPENSE SECTION
+           ===================================================================== -->
+      <section class="view-section" id="view-add-expense">
+        <div class="card" style="max-width: 800px; margin: 0 auto;">
+          <div class="card-header">
+            <div class="card-title">
+              <i class="fas fa-plus-circle"></i>
+              <span>Enter Daily or Monthly Expense</span>
+            </div>
+          </div>
+
+          <form id="inline-expense-form">
+            <div class="form-grid">
+              <!-- Amount -->
+              <div class="form-group full-width">
+                <label class="form-label" for="inline-amount">
+                  Amount <span class="required">*</span>
+                </label>
+                <div class="input-currency-wrapper">
+                  <span class="currency-prefix currency-symbol-display">₹</span>
+                  <input type="number" id="inline-amount" class="form-control" placeholder="0.00" step="0.01" min="1" required>
+                </div>
+                <!-- Quick Amount Presets -->
+                <div class="quick-amount-pills">
+                  <span class="amount-pill" data-val="100">+ ₹100</span>
+                  <span class="amount-pill" data-val="500">+ ₹500</span>
+                  <span class="amount-pill" data-val="1000">+ ₹1,000</span>
+                  <span class="amount-pill" data-val="2500">+ ₹2,500</span>
+                  <span class="amount-pill" data-val="5000">+ ₹5,000</span>
+                  <span class="amount-pill" data-val="15000">+ ₹15,000</span>
+                </div>
+              </div>
+
+              <!-- Category -->
+              <div class="form-group">
+                <label class="form-label" for="inline-category">
+                  Category <span class="required">*</span>
+                </label>
+                <select id="inline-category" class="form-control" required>
+                  <option value="Food">🍔 Food & Dining</option>
+                  <option value="Groceries">🥦 Groceries</option>
+                  <option value="Shopping">🛍️ Shopping</option>
+                  <option value="Bills">💡 Bills & Utilities</option>
+                  <option value="Rent">🏠 House Rent</option>
+                  <option value="Travel">✈️ Travel & Vacation</option>
+                  <option value="Transportation">🚗 Transportation</option>
+                  <option value="Healthcare">💊 Healthcare</option>
+                  <option value="Entertainment">🎬 Entertainment</option>
+                  <option value="Education">🎓 Education</option>
+                  <option value="Other">🏷️ Other</option>
+                </select>
+              </div>
+
+              <!-- Date -->
+              <div class="form-group">
+                <label class="form-label" for="inline-date">
+                  Date <span class="required">*</span>
+                </label>
+                <input type="date" id="inline-date" class="form-control" required>
+              </div>
+
+              <!-- Description -->
+              <div class="form-group full-width">
+                <label class="form-label" for="inline-description">
+                  Description <span class="required">*</span>
+                </label>
+                <input type="text" id="inline-description" class="form-control" placeholder="e.g. Restaurant dinner with team, Electricity bill, Nike shoes" required maxlength="200">
+              </div>
+
+              <!-- Payment Method Selector -->
+              <div class="form-group full-width">
+                <label class="form-label">Payment Method</label>
+                <div class="payment-methods-selector">
+                  <label class="payment-method-item">
+                    <input type="radio" name="inline_payment_method" value="UPI" checked>
+                    <span class="payment-chip"><i class="fas fa-qrcode"></i> UPI</span>
+                  </label>
+                  <label class="payment-method-item">
+                    <input type="radio" name="inline_payment_method" value="Credit Card">
+                    <span class="payment-chip"><i class="fas fa-credit-card"></i> Credit Card</span>
+                  </label>
+                  <label class="payment-method-item">
+                    <input type="radio" name="inline_payment_method" value="Debit Card">
+                    <span class="payment-chip"><i class="fas fa-id-card"></i> Debit Card</span>
+                  </label>
+                  <label class="payment-method-item">
+                    <input type="radio" name="inline_payment_method" value="Cash">
+                    <span class="payment-chip"><i class="fas fa-money-bill-wave"></i> Cash</span>
+                  </label>
+                  <label class="payment-method-item">
+                    <input type="radio" name="inline_payment_method" value="Net Banking">
+                    <span class="payment-chip"><i class="fas fa-university"></i> Net Banking</span>
+                  </label>
+                </div>
+              </div>
+
+              <!-- Optional Notes -->
+              <div class="form-group full-width">
+                <label class="form-label" for="inline-notes">Notes / Tags (Optional)</label>
+                <textarea id="inline-notes" class="form-control" placeholder="Add optional tags, receipt details, or reminders..."></textarea>
+              </div>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px;">
+              <button type="reset" class="btn btn-secondary">
+                <i class="fas fa-eraser"></i>
+                <span>Clear</span>
+              </button>
+              <button type="submit" class="btn btn-primary">
+                <i class="fas fa-check"></i>
+                <span>Add Expense</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <!-- =====================================================================
+           VIEW 3: EXPENSE HISTORY & FILTER STUDIO
+           ===================================================================== -->
+      <section class="view-section" id="view-expenses">
+        <div class="card">
+          <!-- Toolbar -->
+          <div class="filter-toolbar">
+            <div class="filter-group-left">
+              <!-- Search box -->
+              <div class="search-box-wrapper">
+                <i class="fas fa-search"></i>
+                <input type="text" id="filter-search" class="form-control" placeholder="Search description, notes, category...">
+              </div>
+
+              <!-- Category filter -->
+              <select id="filter-category" class="filter-select">
+                <option value="ALL">All Categories</option>
+                <option value="Food">Food</option>
+                <option value="Groceries">Groceries</option>
+                <option value="Shopping">Shopping</option>
+                <option value="Bills">Bills</option>
+                <option value="Rent">Rent</option>
+                <option value="Travel">Travel</option>
+                <option value="Transportation">Transportation</option>
+                <option value="Healthcare">Healthcare</option>
+                <option value="Entertainment">Entertainment</option>
+                <option value="Education">Education</option>
+                <option value="Other">Other</option>
+              </select>
+
+              <!-- Payment method filter -->
+              <select id="filter-payment" class="filter-select">
+                <option value="ALL">All Payment Methods</option>
+                <option value="UPI">UPI</option>
+                <option value="Credit Card">Credit Card</option>
+                <option value="Debit Card">Debit Card</option>
+                <option value="Cash">Cash</option>
+                <option value="Net Banking">Net Banking</option>
+              </select>
+
+              <!-- Sorting -->
+              <select id="filter-sort" class="filter-select">
+                <option value="date-desc">Date (Newest first)</option>
+                <option value="date-asc">Date (Oldest first)</option>
+                <option value="amount-desc">Amount (Highest first)</option>
+                <option value="amount-asc">Amount (Lowest first)</option>
+                <option value="category-asc">Category (A-Z)</option>
+              </select>
+
+              <button class="btn btn-secondary btn-sm" id="btn-clear-filters" title="Reset all filters">
+                <i class="fas fa-undo"></i>
+                <span>Reset</span>
+              </button>
+            </div>
+
+            <!-- Export Actions -->
+            <div>
+              <button class="btn btn-secondary btn-sm" id="btn-export-csv">
+                <i class="fas fa-file-csv"></i>
+                <span>Export CSV</span>
+              </button>
+            </div>
+          </div>
+
+          <div style="font-size: 12px; color: var(--text-dim); margin-bottom: 12px;" id="filter-results-count">
+            Loading expenses...
+          </div>
+
+          <!-- History Table -->
+          <div class="table-responsive">
+            <table class="custom-table" id="expenses-table">
+              <thead>
+                <tr>
+                  <th style="width: 110px;">Date</th>
+                  <th>Description</th>
+                  <th style="width: 140px;">Category</th>
+                  <th style="width: 130px;">Amount</th>
+                  <th style="width: 120px;">Payment Method</th>
+                  <th style="width: 100px; text-align: right;">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="expenses-table-body">
+                <!-- Dynamic Rows -->
+              </tbody>
+            </table>
+
+            <!-- Empty State -->
+            <div class="empty-state" id="expenses-empty-state" style="display: none;">
+              <div class="empty-icon"><i class="fas fa-receipt"></i></div>
+              <h4>No expenses found</h4>
+              <p>No transactions match your current search filters, or you haven't recorded any expenses yet.</p>
+              <button class="btn btn-primary" onclick="openAddExpenseModal()">
+                <i class="fas fa-plus"></i>
+                <span>Add Your First Expense</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =====================================================================
+           VIEW 4: VISUAL ANALYTICS
+           ===================================================================== -->
+      <section class="view-section" id="view-analytics">
+        
+        <!-- Top Monthly Stat Summary -->
+        <div class="kpi-grid" style="margin-bottom: 24px;">
+          <div class="kpi-card cyan">
+            <div class="kpi-label">Average Monthly Spend</div>
+            <div class="kpi-value" id="analytics-avg-monthly">₹0</div>
+            <div class="kpi-subtext">Across active tracked months</div>
+          </div>
+          <div class="kpi-card rose">
+            <div class="kpi-label">Highest Spending Month</div>
+            <div class="kpi-value" id="analytics-highest-month" style="font-size: 18px;">N/A</div>
+            <div class="kpi-subtext">Peak expenditure period</div>
+          </div>
+          <div class="kpi-card emerald">
+            <div class="kpi-label">Lowest Spending Month</div>
+            <div class="kpi-value" id="analytics-lowest-month" style="font-size: 18px;">N/A</div>
+            <div class="kpi-subtext">Most frugal month</div>
+          </div>
+        </div>
+
+        <!-- 4 Visual Analytics Charts Grid -->
+        <div class="charts-grid-quad">
+          
+          <!-- Chart 1: Monthly Spending Graph -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">
+                <i class="fas fa-chart-line"></i>
+                <span>Monthly Spending Graph (All 12 Months)</span>
+              </div>
+            </div>
+            <div class="chart-wrapper">
+              <canvas id="chart-monthly-analytics-page"></canvas>
+            </div>
+          </div>
+
+          <!-- Chart 2: Category Spending Graph -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">
+                <i class="fas fa-chart-bar"></i>
+                <span>Category Spending Comparison</span>
+              </div>
+            </div>
+            <div class="chart-wrapper">
+              <canvas id="chart-category-bar"></canvas>
+            </div>
+          </div>
+
+          <!-- Chart 3: Category Distribution Donut -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">
+                <i class="fas fa-chart-pie"></i>
+                <span>Category Percentage Breakdown</span>
+              </div>
+            </div>
+            <div class="chart-wrapper">
+              <canvas id="chart-category-donut-full"></canvas>
+            </div>
+          </div>
+
+          <!-- Chart 4: Daily Spending Timeline -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">
+                <i class="fas fa-calendar-day"></i>
+                <span>Daily Spending (Last 30 Days)</span>
+              </div>
+            </div>
+            <div class="chart-wrapper">
+              <canvas id="chart-daily-activity"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Detailed Category Breakdown Cards -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">
+              <i class="fas fa-list-ul"></i>
+              <span>Category Spending Breakdown & Transactions</span>
+            </div>
+          </div>
+          <div id="category-breakdown-list">
+            <!-- Populated via JavaScript -->
+          </div>
+        </div>
+      </section>
+
+      <!-- =====================================================================
+           VIEW 5: WHERE IS MY MONEY GOING?
+           ===================================================================== -->
+      <section class="view-section" id="view-where-money-goes">
+        
+        <!-- Highlights 4-card grid -->
+        <div class="money-destination-grid">
+          <!-- Card 1 -->
+          <div class="destination-card" style="border-top: 3px solid var(--rose);">
+            <div class="dest-badge">Largest Single Purchase</div>
+            <div class="dest-main-value" id="where-highest-individual">₹0</div>
+            <div class="dest-sub" id="where-highest-ind-desc">No expense logged yet</div>
+          </div>
+
+          <!-- Card 2 -->
+          <div class="destination-card" style="border-top: 3px solid var(--primary);">
+            <div class="dest-badge">Highest Category Sink</div>
+            <div class="dest-main-value" id="where-highest-cat">N/A</div>
+            <div class="dest-sub" id="where-highest-cat-desc">No category data</div>
+          </div>
+
+          <!-- Card 3 -->
+          <div class="destination-card" style="border-top: 3px solid var(--cyan);">
+            <div class="dest-badge">Highest Spending Day</div>
+            <div class="dest-main-value" id="where-highest-day">₹0</div>
+            <div class="dest-sub" id="where-highest-day-desc">No single day peak recorded</div>
+          </div>
+
+          <!-- Card 4 -->
+          <div class="destination-card" style="border-top: 3px solid var(--amber);">
+            <div class="dest-badge">Highest Spending Month</div>
+            <div class="dest-main-value" id="where-highest-month">₹0</div>
+            <div class="dest-sub" id="where-highest-month-desc">No monthly records</div>
+          </div>
+        </div>
+
+        <!-- Top 5 Largest Expenses List -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">
+              <i class="fas fa-layer-group"></i>
+              <span>Top Individual Expenses (Highest to Lowest)</span>
+            </div>
+          </div>
+          <div id="where-top-purchases-list">
+            <!-- Dynamic items -->
+          </div>
+        </div>
+      </section>
+
+      <!-- =====================================================================
+           VIEW 6: AI INSIGHTS & EXPENSE HEALTH SCORE
+           ===================================================================== -->
+      <section class="view-section" id="view-ai-insights">
+        
+        <div class="ai-insights-layout">
+          <!-- Left Column: Health Score Radial Gauge -->
+          <div class="card health-score-card">
+            <div class="card-title">
+              <i class="fas fa-heartbeat"></i>
+              <span>Expense Health Score</span>
+            </div>
+            
+            <div class="score-radial-wrapper">
+              <svg width="170" height="170" viewBox="0 0 170 170">
+                <circle class="score-radial-bg" cx="85" cy="85" r="70"></circle>
+                <circle class="score-radial-progress" id="health-score-circle" cx="85" cy="85" r="70"></circle>
+              </svg>
+              <div class="score-radial-inner">
+                <span class="score-number" id="health-score-number">--</span>
+                <span class="score-label-max">/ 100</span>
+              </div>
+            </div>
+
+            <div style="font-family: var(--font-heading); font-size: 16px; font-weight: 700; color: #fff; margin-bottom: 4px;" id="health-score-rating">
+              Calculating...
+            </div>
+            <div style="font-size: 12px; color: var(--text-muted); line-height: 1.4; margin-bottom: 16px;" id="health-score-summary">
+              Evaluating spending consistency and category concentration.
+            </div>
+
+            <!-- Itemized Factors -->
+            <div class="health-factors-list" id="health-factors-list">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
+
+          <!-- Right Column: AI Insights Stream -->
+          <div style="display: flex; flex-direction: column; gap: 20px;">
+            
+            <!-- AI Forecast Run-Rate Box -->
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title">
+                  <i class="fas fa-crystal-ball"></i>
+                  <span>AI End-of-Month Spend Projection</span>
+                </div>
+              </div>
+              <div class="prediction-box">
+                <div>
+                  <div style="font-size: 12px; color: var(--text-muted);">Spent So Far This Month</div>
+                  <div style="font-family: var(--font-heading); font-size: 20px; font-weight: 700; color: #fff;" id="pred-current-spent">₹0</div>
+                </div>
+                <div style="font-size: 24px; color: var(--primary);">➔</div>
+                <div>
+                  <div style="font-size: 12px; color: #818cf8; font-weight: 600;">Estimated End-of-Month Total</div>
+                  <div style="font-family: var(--font-heading); font-size: 22px; font-weight: 800; color: #34d399;" id="pred-estimated-eom">₹0</div>
+                </div>
+                <div>
+                  <div style="font-size: 12px; color: var(--text-muted);">Daily Burn Rate</div>
+                  <div style="font-family: var(--font-heading); font-size: 18px; font-weight: 700; color: #fff;" id="pred-daily-rate">₹0 / day</div>
+                </div>
+              </div>
+              <div style="font-size: 11px; color: var(--text-dim); margin-top: 10px;" id="pred-disclaimer">
+                Estimate based on current daily spending velocity. Discretionary expenses may alter final totals.
+              </div>
+            </div>
+
+            <!-- Insights List -->
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title">
+                  <i class="fas fa-lightbulb"></i>
+                  <span>Smart Dynamic Suggestions</span>
+                </div>
+              </div>
+              <div class="insights-stream" id="ai-insights-stream">
+                <!-- Populated via JavaScript -->
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      <!-- =====================================================================
+           VIEW 7: BUDGET & GOALS
+           ===================================================================== -->
+      <section class="view-section" id="view-budget">
+        <div class="budget-overview-card">
+          <div class="card-header" style="margin-bottom: 0;">
+            <div class="card-title" style="font-size: 18px;">
+              <i class="fas fa-wallet"></i>
+              <span>Monthly Budget Tracker</span>
+            </div>
+            <span class="brand-badge" id="budget-pct-badge">0% used</span>
+          </div>
+
+          <div class="budget-hero-stats">
+            <div class="budget-stat-box">
+              <div class="budget-stat-label">Monthly Target Budget</div>
+              <div class="budget-stat-val" id="budget-total-limit">₹35,000</div>
+            </div>
+            <div class="budget-stat-box">
+              <div class="budget-stat-label">Total Spent This Month</div>
+              <div class="budget-stat-val" id="budget-spent-amount" style="color: #fb7185;">₹0</div>
+            </div>
+            <div class="budget-stat-box">
+              <div class="budget-stat-label">Remaining Safe Spend</div>
+              <div class="budget-stat-val" id="budget-remaining-amount" style="color: #34d399;">₹35,000</div>
+            </div>
+          </div>
+
+          <div style="margin-bottom: 12px;">
+            <div class="progress-bar-container" style="height: 10px;">
+              <div class="progress-bar-fill" id="budget-progress-bar" style="width: 0%;"></div>
+            </div>
+          </div>
+
+          <div id="budget-status-alert" style="display: none; margin-top: 16px;"></div>
+        </div>
+
+        <!-- Set / Update Budget Form -->
+        <div class="card" style="max-width: 600px;">
+          <div class="card-header">
+            <div class="card-title">
+              <i class="fas fa-edit"></i>
+              <span>Adjust Monthly Budget Target</span>
+            </div>
+          </div>
+          <form id="budget-form">
+            <div class="form-group" style="margin-bottom: 16px;">
+              <label class="form-label" for="budget-input-limit">New Monthly Budget Amount</label>
+              <div class="input-currency-wrapper">
+                <span class="currency-prefix currency-symbol-display">₹</span>
+                <input type="number" id="budget-input-limit" class="form-control" value="35000" min="100" step="500" required>
+              </div>
+            </div>
+            <button type="submit" class="btn btn-primary">
+              <i class="fas fa-save"></i>
+              <span>Save Budget Target</span>
+            </button>
+          </form>
+        </div>
+      </section>
+
+      <!-- =====================================================================
+           VIEW 8: SETTINGS & DEMO DATA
+           ===================================================================== -->
+      <section class="view-section" id="view-settings">
+        <div class="card" style="max-width: 700px; margin: 0 auto;">
+          <div class="card-header">
+            <div class="card-title">
+              <i class="fas fa-cogs"></i>
+              <span>Application Preferences & Sample Data</span>
+            </div>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 20px;">
+            <!-- Demo Data Box -->
+            <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 18px;">
+              <h4 style="font-size: 15px; font-weight: 700; color: #fff; margin-bottom: 6px;">Demo & Testing Data</h4>
+              <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 14px;">
+                Populate realistic multi-month Indian Rupee expense records to immediately demonstrate full analytics, charts, anomaly detection, and AI suggestions.
+              </p>
+              <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <button class="btn btn-success btn-sm" id="btn-seed-data">
+                  <i class="fas fa-database"></i>
+                  <span>Load Sample Data</span>
+                </button>
+                <button class="btn btn-danger btn-sm" id="btn-clear-data">
+                  <i class="fas fa-trash-alt"></i>
+                  <span>Clear All Expenses</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Currency Setting -->
+            <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 18px;">
+              <h4 style="font-size: 15px; font-weight: 700; color: #fff; margin-bottom: 6px;">Default Currency</h4>
+              <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 12px;">
+                Configure the primary currency symbol for totals and chart tooltips.
+              </p>
+              <div style="font-size: 13px; color: #818cf8; font-weight: 600;">
+                Current Active: Indian Rupee (₹)
+              </div>
+            </div>
+
+            <!-- Architecture Info -->
+            <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 18px;">
+              <h4 style="font-size: 15px; font-weight: 700; color: #fff; margin-bottom: 6px;">AI Engine Architecture</h4>
+              <p style="font-size: 13px; color: var(--text-muted); line-height: 1.4;">
+                ExpenseAI operates using an automated statistical & heuristic analysis engine that executes in real time from your SQLite database. If an external API key (<code style="color:#818cf8;">GEMINI_API_KEY</code>) is provided, deep natural-language commentary is automatically synthesized.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<!-- =========================================================================
+     MODAL: ADD / EDIT EXPENSE
+     ========================================================================= -->
+<div class="modal-backdrop" id="expense-modal">
+  <div class="modal-dialog">
+    <div class="modal-header">
+      <h3 id="modal-expense-title">Add New Expense</h3>
+      <button class="modal-close" id="modal-close-btn" aria-label="Close Modal">&times;</button>
+    </div>
+
+    <form id="modal-expense-form">
+      <div class="modal-body">
+        <div class="form-grid">
+          <!-- Amount -->
+          <div class="form-group full-width">
+            <label class="form-label" for="modal-amount">
+              Amount <span class="required">*</span>
+            </label>
+            <div class="input-currency-wrapper">
+              <span class="currency-prefix currency-symbol-display">₹</span>
+              <input type="number" id="modal-amount" class="form-control" placeholder="0.00" step="0.01" min="1" required>
+            </div>
+            <div class="quick-amount-pills">
+              <span class="amount-pill" data-val="100">+ ₹100</span>
+              <span class="amount-pill" data-val="500">+ ₹500</span>
+              <span class="amount-pill" data-val="1000">+ ₹1,000</span>
+              <span class="amount-pill" data-val="2500">+ ₹2,500</span>
+              <span class="amount-pill" data-val="5000">+ ₹5,000</span>
+            </div>
+          </div>
+
+          <!-- Category -->
+          <div class="form-group">
+            <label class="form-label" for="modal-category">
+              Category <span class="required">*</span>
+            </label>
+            <select id="modal-category" class="form-control" required>
+              <option value="Food">🍔 Food & Dining</option>
+              <option value="Groceries">🥦 Groceries</option>
+              <option value="Shopping">🛍️ Shopping</option>
+              <option value="Bills">💡 Bills & Utilities</option>
+              <option value="Rent">🏠 House Rent</option>
+              <option value="Travel">✈️ Travel & Vacation</option>
+              <option value="Transportation">🚗 Transportation</option>
+              <option value="Healthcare">💊 Healthcare</option>
+              <option value="Entertainment">🎬 Entertainment</option>
+              <option value="Education">🎓 Education</option>
+              <option value="Other">🏷️ Other</option>
+            </select>
+          </div>
+
+          <!-- Date -->
+          <div class="form-group">
+            <label class="form-label" for="modal-date">
+              Date <span class="required">*</span>
+            </label>
+            <input type="date" id="modal-date" class="form-control" required>
+          </div>
+
+          <!-- Description -->
+          <div class="form-group full-width">
+            <label class="form-label" for="modal-description">
+              Description <span class="required">*</span>
+            </label>
+            <input type="text" id="modal-description" class="form-control" placeholder="e.g. Lunch at Cafe, Uber ride, Grocery store" required maxlength="200">
+          </div>
+
+          <!-- Payment Method -->
+          <div class="form-group full-width">
+            <label class="form-label">Payment Method</label>
+            <div class="payment-methods-selector">
+              <label class="payment-method-item">
+                <input type="radio" name="modal_payment_method" value="UPI" checked>
+                <span class="payment-chip"><i class="fas fa-qrcode"></i> UPI</span>
+              </label>
+              <label class="payment-method-item">
+                <input type="radio" name="modal_payment_method" value="Credit Card">
+                <span class="payment-chip"><i class="fas fa-credit-card"></i> Credit</span>
+              </label>
+              <label class="payment-method-item">
+                <input type="radio" name="modal_payment_method" value="Debit Card">
+                <span class="payment-chip"><i class="fas fa-id-card"></i> Debit</span>
+              </label>
+              <label class="payment-method-item">
+                <input type="radio" name="modal_payment_method" value="Cash">
+                <span class="payment-chip"><i class="fas fa-money-bill-wave"></i> Cash</span>
+              </label>
+              <label class="payment-method-item">
+                <input type="radio" name="modal_payment_method" value="Net Banking">
+                <span class="payment-chip"><i class="fas fa-university"></i> Bank</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Notes -->
+          <div class="form-group full-width">
+            <label class="form-label" for="modal-notes">Notes / Tags (Optional)</label>
+            <input type="text" id="modal-notes" class="form-control" placeholder="Optional notes...">
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id="modal-cancel-btn">Cancel</button>
+        <button type="submit" class="btn btn-primary" id="modal-expense-submit-btn">Add Expense</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- =========================================================================
+     TOAST NOTIFICATIONS CONTAINER
+     ========================================================================= -->
+<div id="toast-container"></div>
+
+<!-- Custom Scripts -->
+<script src="/static/charts.js"></script>
+<script src="/static/app.js"></script>
+
+</body>
+</html>
