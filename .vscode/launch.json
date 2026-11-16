@@ -1,0 +1,17 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Run ExpenseAI (Python Server + Dashboard)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/run.py",
+      "console": "integratedTerminal",
+      "serverReadyAction": {
+        "action": "openExternally",
+        "pattern": "Uvicorn running on (http://\\S+)",
+        "uriFormat": "%s"
+      }
+    }
+  ]
+}
